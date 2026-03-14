@@ -52,18 +52,28 @@ echo "Updating Homebrew..."
 brew update
 echo ""
 
-# ============================================
-# Step 2: Install Tailscale
-# ============================================
-echo "Step 2: Installing Tailscale..."
+echo "Verifying installed SDL packages..."
 echo "-------------------------------------------"
-if command_exists tailscale; then
-    echo "Tailscale is already installed!"
-    tailscale --version
-else
-    brew install tailscale
-    echo "Tailscale installed successfully!"
-fi
+SDL_PACKAGES_INSTALLED=$(brew list 2>/dev/null | grep -E '^(sdl2|sdl2_image|sdl2_mixer|sdl2_ttf)' || true)
+echo ""
+
+# ============================================
+# Step 2: Install build tools and SDL2 libs
+# ============================================
+echo "Step 2: Installing build tools and SDL2 libraries..."
+echo "-------------------------------------------"
+
+PACKAGES=(cmake sdl2 sdl2_image sdl2_mixer sdl2_ttf)
+
+for pkg in "${PACKAGES[@]}"; do
+  if brew ls --versions "$pkg" > /dev/null 2>&1; then
+    echo "$pkg is already installed"
+  else
+    echo "Installing $pkg..."
+    brew install "$pkg"
+  fi
+done
+
 echo ""
 
 # ============================================
@@ -131,13 +141,34 @@ echo "=========================================="
 echo ""
 echo "Installed Programs:"
 echo "  ✓ Homebrew       - Package manager"
-echo "  ✓ Tailscale      - VPN client"
-echo "  ✓ Visual Studio Code - Code editor"
-echo "  ✓ Google Chrome  - Web browser"
-echo "  ✓ Sublime Text   - Code editor"
-echo "  ✓ Telegram       - Messaging app"
+if command_exists code; then
+  echo "  ✓ Visual Studio Code - Code editor"
+else
+  echo "  ✗ Visual Studio Code"
+fi
+if [[ -d "/Applications/Google Chrome.app" ]]; then
+  echo "  ✓ Google Chrome  - Web browser"
+else
+  echo "  ✗ Google Chrome"
+fi
+if command_exists subl; then
+  echo "  ✓ Sublime Text   - Code editor"
+else
+  echo "  ✗ Sublime Text"
+fi
+if [[ -d \"/Applications/Telegram Desktop.app\" ]] || [[ -d \"/Applications/Telegram.app\" ]]; then
+  echo "  ✓ Telegram       - Messaging app"
+else
+  echo "  ✗ Telegram"
+fi
+
+if [[ -n \"$SDL_PACKAGES_INSTALLED\" ]]; then
+  echo "  ✓ SDL packages   - ${SDL_PACKAGES_INSTALLED//$'\n'/ }"
+else
+  echo "  ✗ SDL packages   - none installed"
+fi
+
 echo ""
 echo "To open installed applications, use Spotlight (Cmd+Space) or find them in /Applications"
 echo ""
 echo "To update all installed packages, run: brew update && brew upgrade"
-
